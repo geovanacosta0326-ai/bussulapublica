@@ -1,0 +1,10 @@
+# Ignorar arquivos de credenciais e senhas (CRUCIAL)
+.env
+
+# Ignorar pastas de dados locais (para não lotar o GitHub com JSONs gigantes)
+data/
+__pycache__/
+
+# Ignorar arquivos do VS Code ou do sistema
+.vscode/
+.DS_Store
