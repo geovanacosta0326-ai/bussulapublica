@@ -10,11 +10,21 @@ import time
 
 os.makedirs("data/raw", exist_ok=True)
 
-DATA_INICIO = "2026-04-01"
-DATA_FIM = "2026-04-30"
+DATA_INICIO = "2026-05-01"
+DATA_FIM = "2026-05-31"
+
+def fazer_chave(item, campo_data):
+    """Gera chave de deduplicação consistente para qualquer registro."""
+    item_id = item.get("id") or item.get("uri")
+    if campo_data:
+        item_data = (item.get(campo_data) or "")[:10]  # só YYYY-MM-DD
+        return (item_id, item_data)
+    return item_id
 
 
-def baixar_endpoint(endpoint_name, params_adicionais=None, usar_datas=False):
+def baixar_endpoint(endpoint_name, params_adicionais=None, usar_datas=False,
+                    param_data_inicio="dataInicio", param_data_fim="dataFim",
+                    campo_data=None):
 
     url = f"https://dadosabertos.camara.leg.br/api/v2/{endpoint_name}"
     caminho_arquivo = f"data/raw/{endpoint_name}.json"
@@ -34,12 +44,15 @@ def baixar_endpoint(endpoint_name, params_adicionais=None, usar_datas=False):
     else:
         todos_dados = []
 
-    # cria set de IDs já existentes
+    # set de chaves usando a MESMA função que será usada na comparação
     ids_existentes = set()
-
     for item in todos_dados:
-        if isinstance(item, dict) and "id" in item:
-            ids_existentes.add(item["id"])
+        if isinstance(item, dict):
+            chave = fazer_chave(item, campo_data)
+            if chave:
+                ids_existentes.add(chave)
+
+    print(f"Registros já existentes: {len(todos_dados)}")
 
     pagina = 1
 
@@ -53,8 +66,8 @@ def baixar_endpoint(endpoint_name, params_adicionais=None, usar_datas=False):
         }
 
         if usar_datas:
-            params["dataInicio"] = DATA_INICIO
-            params["dataFim"] = DATA_FIM
+            params[param_data_inicio] = DATA_INICIO
+            params[param_data_fim] = DATA_FIM
 
         if params_adicionais:
             params.update(params_adicionais)
@@ -81,16 +94,22 @@ def baixar_endpoint(endpoint_name, params_adicionais=None, usar_datas=False):
 
             # ==========================================
             # 2. FILTRA APENAS NOVOS REGISTROS
+            #    Usa fazer_chave() — mesma função do carregamento
             # ==========================================
 
             novos_registros = []
 
             for r in registros:
-                rid = r.get("id") or r.get("uri")
+                # filtra pelo campo de data real da API, se informado
+                if campo_data:
+                    r_data = (r.get(campo_data) or "")[:10]
+                    if r_data and not (DATA_INICIO <= r_data <= DATA_FIM):
+                        continue
 
-                if rid not in ids_existentes:
+                chave = fazer_chave(r, campo_data)
+                if chave and chave not in ids_existentes:
                     novos_registros.append(r)
-                    ids_existentes.add(rid)
+                    ids_existentes.add(chave)
 
             todos_dados.extend(novos_registros)
 
@@ -141,7 +160,19 @@ if __name__ == "__main__":
     )
 
     # FATOS (COM DATA)
-    baixar_endpoint("proposicoes", usar_datas=True)
-    baixar_endpoint("votacoes", usar_datas=True)
+    baixar_endpoint(
+        "proposicoes",
+        usar_datas=True,
+        param_data_inicio="dataApresentacaoInicio",
+        param_data_fim="dataApresentacaoFim",
+        campo_data="dataApresentacao"
+    )
+    baixar_endpoint(
+        "votacoes",
+        usar_datas=True,
+        param_data_inicio="dataInicio",
+        param_data_fim="dataFim",
+        campo_data="data"
+    )
 
     print("\n🚀 TODAS AS EXTRAÇÕES FORAM CONCLUÍDAS COM SUCESSO!")

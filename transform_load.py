@@ -1,47 +1,74 @@
+################################################################################
+# CARGA DE DADOS PARA O BANCO DE DADOS
+#
+# Objetivo:
+# Ler os arquivos JSON gerados pela etapa de extração da API da Câmara dos
+# Deputados e carregar os dados para as tabelas dimensionais e factuais
+# do banco de dados.
+#
+# Funcionamento:
+# - Conecta ao banco utilizando a variável DB_URI.
+# - Lê os arquivos JSON armazenados localmente.
+# - Converte os dados para DataFrames do Pandas.
+# - Seleciona apenas as colunas necessárias para cada tabela.
+# - Verifica quais registros já existem no banco.
+# - Insere somente novos registros, evitando duplicidades.
+# - Atualiza as tabelas de dimensões e fatos.
+#
+# Tabelas alimentadas:
+#
+# Dimensões:
+# - dim_deputados
+# - dim_partidos
+#
+# Fatos:
+# - fato_proposicoes
+# - fato_votacoes
+#
+# Arquivos de origem:
+# - data/raw/deputados.json
+# - data/raw/partidos.json
+# - data/raw/proposicoes.json
+# - data/raw/votacoes.json
+#
+# Aplicação:
+# Etapa de transformação e carga (ETL) responsável por popular o banco de
+# dados utilizado em análises, dashboards e projetos de Business Intelligence.
+################################################################################
+
 import os
 import json
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
-# =========================================================
-# CARREGA VARIÁVEIS DE AMBIENTE
-# =========================================================
-
+# Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-DB_URI = os.getenv("DB_URI")
+# Cria a conexão com o banco de dados
+engine = create_engine(os.getenv("DB_URI"))
 
-# =========================================================
-# CONEXÃO COM SUPABASE
-# =========================================================
-
-engine = create_engine(DB_URI)
-
-# =========================================================
-# FUNÇÃO PARA LER JSON
-# =========================================================
 
 def carregar_dados_json(caminho_arquivo):
     """
-    Lê JSON com ou sem chave 'dados'
+    Lê um arquivo JSON e converte seu conteúdo para um DataFrame.
     """
 
     with open(caminho_arquivo, "r", encoding="utf-8") as f:
         conteudo = json.load(f)
 
-    # quando a API retorna {"dados": [...]}
+    # Trata arquivos que possuem a estrutura {"dados": [...]}
     if isinstance(conteudo, dict) and "dados" in conteudo:
         return pd.json_normalize(conteudo, record_path=["dados"])
 
-    # quando já vem lista direta
+    # Trata arquivos contendo lista simples de registros
     return pd.json_normalize(conteudo)
 
-# =========================================================
-# PROCESSAR DIMENSÕES
-# =========================================================
 
 def processar_dimensoes(engine):
+    """
+    Realiza a carga das tabelas dimensionais.
+    """
 
     print("\n--- PROCESSANDO DIMENSÕES ---")
 
@@ -53,12 +80,14 @@ def processar_dimensoes(engine):
 
     if os.path.exists(caminho_dep):
 
-        df_dep = carregar_dados_json(caminho_dep)
+        # Carrega os dados do arquivo JSON
+        df = carregar_dados_json(caminho_dep)
 
-        df_dep = df_dep.drop_duplicates(subset=["id"])
-        df_dep = df_dep.dropna(subset=["id", "nome"])
+        # Padroniza o ID como texto
+        df["id"] = df["id"].astype(str)
 
-        colunas_dep = [
+        # Seleciona apenas as colunas utilizadas na dimensão
+        colunas_permitidas = [
             "id",
             "nome",
             "siglaPartido",
@@ -67,41 +96,35 @@ def processar_dimensoes(engine):
             "urlFoto"
         ]
 
-        colunas_existentes = [
-            col for col in colunas_dep
-            if col in df_dep.columns
+        df_final = df[
+            [c for c in colunas_permitidas if c in df.columns]
         ]
 
-        df_dep_final = df_dep[colunas_existentes]
-
-        # remove ids já existentes
+        # Verifica registros já existentes no banco
         try:
-            ids_existentes = pd.read_sql(
-                "SELECT id FROM dim_deputados",
+            ids_db = pd.read_sql(
+                "SELECT id::text FROM dim_deputados",
                 engine
-            )
+            )["id"]
 
-            df_dep_final = df_dep_final[
-                ~df_dep_final["id"].isin(ids_existentes["id"])
+            df_final = df_final[
+                ~df_final["id"].isin(ids_db)
             ]
 
         except:
             pass
 
-        # insere apenas novos
-        if not df_dep_final.empty:
+        # Insere somente registros novos
+        if not df_final.empty:
 
-            df_dep_final.to_sql(
+            df_final.to_sql(
                 "dim_deputados",
                 engine,
                 if_exists="append",
                 index=False
             )
 
-        print(f"✔ {len(df_dep_final)} novos deputados inseridos.")
-
-    else:
-        print(f"❌ Arquivo não encontrado: {caminho_dep}")
+            print(f"✔ {len(df_final)} deputados inseridos.")
 
     # =====================================================
     # DIM_PARTIDOS
@@ -111,58 +134,55 @@ def processar_dimensoes(engine):
 
     if os.path.exists(caminho_part):
 
-        df_part = carregar_dados_json(caminho_part)
+        # Carrega os dados do arquivo JSON
+        df = carregar_dados_json(caminho_part)
 
-        df_part = df_part.drop_duplicates(subset=["id"])
+        # Padroniza o ID como texto
+        df["id"] = df["id"].astype(str)
 
-        colunas_part = [
+        # Seleciona apenas as colunas utilizadas na dimensão
+        colunas_permitidas = [
             "id",
             "sigla",
             "nome",
             "uri"
         ]
 
-        colunas_existentes = [
-            col for col in colunas_part
-            if col in df_part.columns
+        df_final = df[
+            [c for c in colunas_permitidas if c in df.columns]
         ]
 
-        df_part_final = df_part[colunas_existentes]
-
-        # remove ids já existentes
+        # Verifica registros já existentes
         try:
-            ids_existentes = pd.read_sql(
-                "SELECT id FROM dim_partidos",
+            ids_db = pd.read_sql(
+                "SELECT id::text FROM dim_partidos",
                 engine
-            )
+            )["id"]
 
-            df_part_final = df_part_final[
-                ~df_part_final["id"].isin(ids_existentes["id"])
+            df_final = df_final[
+                ~df_final["id"].isin(ids_db)
             ]
 
         except:
             pass
 
-        # insere apenas novos
-        if not df_part_final.empty:
+        # Insere somente novos registros
+        if not df_final.empty:
 
-            df_part_final.to_sql(
+            df_final.to_sql(
                 "dim_partidos",
                 engine,
                 if_exists="append",
                 index=False
             )
 
-        print(f"✔ {len(df_part_final)} novos partidos inseridos.")
+            print(f"✔ {len(df_final)} partidos inseridos.")
 
-    else:
-        print(f"❌ Arquivo não encontrado: {caminho_part}")
-
-# =========================================================
-# PROCESSAR FATOS
-# =========================================================
 
 def processar_fatos(engine):
+    """
+    Realiza a carga das tabelas factuais.
+    """
 
     print("\n--- PROCESSANDO FATOS ---")
 
@@ -174,53 +194,75 @@ def processar_fatos(engine):
 
     if os.path.exists(caminho_prop):
 
-        df_prop = carregar_dados_json(caminho_prop)
+        # Carrega os dados do arquivo JSON
+        df = carregar_dados_json(caminho_prop)
 
-        df_prop = df_prop.drop_duplicates(subset=["id"])
+        # Padroniza o ID como texto
+        df["id"] = df["id"].astype(str)
 
-        colunas_prop = [
+        # Seleciona as colunas necessárias
+        colunas_permitidas = [
             "id",
+            "uri",
             "siglaTipo",
+            "codTipo",
             "numero",
             "ano",
-            "ementa"
+            "ementa",
+            "dataApresentacao"
         ]
 
-        colunas_existentes = [
-            col for col in colunas_prop
-            if col in df_prop.columns
-        ]
+        df_final = df[
+            [c for c in colunas_permitidas if c in df.columns]
+        ].copy()
 
-        df_prop_final = df_prop[colunas_existentes]
-
-        # remove ids já existentes
-        try:
-            ids_existentes = pd.read_sql(
-                "SELECT id FROM fato_proposicoes",
-                engine
+        # -----------------------------------------------
+        # TRATAMENTO: ementa vazia → "Sem ementa"
+        # -----------------------------------------------
+        if "ementa" in df_final.columns:
+            df_final["ementa"] = (
+                df_final["ementa"]
+                .fillna("")
+                .str.strip()
+                .replace("", "Sem ementa")
             )
 
-            df_prop_final = df_prop_final[
-                ~df_prop_final["id"].isin(ids_existentes["id"])
+        # -----------------------------------------------
+        # TRATAMENTO: ano vazio → extrai de dataApresentacao
+        # -----------------------------------------------
+        if "ano" in df_final.columns and "dataApresentacao" in df_final.columns:
+            ano_num = pd.to_numeric(df_final["ano"], errors="coerce")
+            mask_sem_ano = df_final["ano"].isna() | (df_final["ano"].astype(str).str.strip() == "") | (ano_num == 0)
+            df_final.loc[mask_sem_ano, "ano"] = (
+                pd.to_datetime(df_final.loc[mask_sem_ano, "dataApresentacao"], errors="coerce")
+                .dt.year
+            )
+
+        # Verifica registros já existentes
+        try:
+            ids_db = pd.read_sql(
+                "SELECT id::text FROM fato_proposicoes",
+                engine
+            )["id"]
+
+            df_final = df_final[
+                ~df_final["id"].isin(ids_db)
             ]
 
         except:
             pass
 
-        # insere apenas novos
-        if not df_prop_final.empty:
+        # Insere somente novos registros
+        if not df_final.empty:
 
-            df_prop_final.to_sql(
+            df_final.to_sql(
                 "fato_proposicoes",
                 engine,
                 if_exists="append",
                 index=False
             )
 
-        print(f"✔ {len(df_prop_final)} novas proposições inseridas.")
-
-    else:
-        print(f"❌ Arquivo não encontrado: {caminho_prop}")
+            print(f"✔ {len(df_final)} proposições inseridas.")
 
     # =====================================================
     # FATO_VOTACOES
@@ -230,68 +272,70 @@ def processar_fatos(engine):
 
     if os.path.exists(caminho_vot):
 
-        df_vot = carregar_dados_json(caminho_vot)
+        # Carrega os dados do arquivo JSON
+        df = carregar_dados_json(caminho_vot)
 
-        df_vot = df_vot.drop_duplicates(subset=["id"])
+        # Padroniza o ID como texto
+        df["id"] = df["id"].astype(str)
 
-        colunas_vot = [
+        # Seleciona as colunas necessárias
+        colunas_permitidas = [
             "id",
+            "uri",
             "data",
-            "descricao"
+            "dataHoraRegistro",
+            "siglaOrgao",
+            "uriOrgao",
+            "uriEvento",
+            "proposicaoObjeto",
+            "uriProposicaoObjeto",
+            "descricao",
+            "aprovacao"
         ]
 
-        colunas_existentes = [
-            col for col in colunas_vot
-            if col in df_vot.columns
+        df_final = df[
+            [c for c in colunas_permitidas if c in df.columns]
         ]
 
-        df_vot_final = df_vot[colunas_existentes]
-
-        # remove ids já existentes
+        # Verifica registros já existentes
         try:
-            ids_existentes = pd.read_sql(
-                "SELECT id FROM fato_votacoes",
+            ids_db = pd.read_sql(
+                "SELECT id::text FROM fato_votacoes",
                 engine
-            )
+            )["id"]
 
-            df_vot_final = df_vot_final[
-                ~df_vot_final["id"].isin(ids_existentes["id"])
+            df_final = df_final[
+                ~df_final["id"].isin(ids_db)
             ]
 
         except:
             pass
 
-        # insere apenas novos
-        if not df_vot_final.empty:
+        # Insere somente novos registros
+        if not df_final.empty:
 
-            df_vot_final.to_sql(
+            df_final.to_sql(
                 "fato_votacoes",
                 engine,
                 if_exists="append",
                 index=False
             )
 
-        print(f"✔ {len(df_vot_final)} novas votações inseridas.")
+            print(f"✔ {len(df_final)} votações inseridas.")
 
-    else:
-        print(f"❌ Arquivo não encontrado: {caminho_vot}")
-
-# =========================================================
-# EXECUÇÃO PRINCIPAL
-# =========================================================
 
 if __name__ == "__main__":
 
     try:
 
-        print("🚀 Conectando ao Supabase...")
-
+        # Executa a carga das dimensões
         processar_dimensoes(engine)
 
+        # Executa a carga das tabelas fato
         processar_fatos(engine)
 
-        print("\n✅ PIPELINE FINALIZADO SEM DUPLICAÇÕES")
+        print("\n✅ PIPELINE FINALIZADO COM SUCESSO!")
 
     except Exception as e:
 
-        print(f"\n❌ ERRO NO PIPELINE:\n{e}")
+        print(f"\n❌ ERRO:\n{e}")
