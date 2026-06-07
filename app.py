@@ -17,6 +17,14 @@ st.set_page_config(
 # ── CSS Customizado ─────────────────────────────────────────────────────────
 st.markdown("""
 <style>
+[data-testid="manage-app-button"] { display: none !important; }
+footer { visibility: hidden !important; }
+header { visibility: hidden !important; }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@300;400;500&display=swap');
 
 html, body, [class*="css"] {
@@ -250,7 +258,7 @@ k4.metric("🏷 Sem Tema",             f"{total_sem_tema:,}", delta=f"{pct_sem_t
 st.divider()
 
 # ── Abas principais ──────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Proposições por Tema", "💸 Despesas por Categoria", "📋 Dados Recentes", "💬 Assistente"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Proposições por Tema", "💸 Despesas por Categoria", "🏅 Deputados", "📋 Dados Recentes", "💬 Assistente"])
 
 # ── TAB 1 ────────────────────────────────────────────────────────────────────
 with tab1:
@@ -426,8 +434,100 @@ with tab2:
     else:
         st.info("Dados de despesas indisponíveis.")
 
-# ── TAB 3 ────────────────────────────────────────────────────────────────────
+# ── TAB 3 — DEPUTADOS ───────────────────────────────────────────────────────
 with tab3:
+    st.subheader("🏅 Deputados que Mais Gastam")
+    st.caption("Ranking dos deputados com maior gasto total em despesas parlamentares.")
+
+    col_d1, col_d2 = st.columns([1, 1])
+    with col_d1:
+        filtro_desp_tipo = st.selectbox("Filtrar por Categoria de Despesa", ["Todas"] + [
+            "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR.",
+            "LOCAÇÃO OU FRETAMENTO DE VEÍCULOS AUTOMOTORES",
+            "COMBUSTÍVEIS E LUBRIFICANTES.",
+            "PASSAGEM AÉREA - SIGEPA",
+            "MANUTENÇÃO DE ESCRITÓRIO DE APOIO À ATIVIDADE PARLAMENTAR",
+        ], key="filtro_desp_tipo")
+    with col_d2:
+        top_n = st.slider("Número de deputados", 5, 30, 15, key="top_n_dep")
+
+    where_dep = ""
+    if filtro_desp_tipo != "Todas":
+        where_dep = f"AND d.tipodespesa = '{filtro_desp_tipo}'"
+
+    df_dep = get_data(f"""
+        SELECT
+            dep.nome,
+            dep."siglaPartido" as partido,
+            dep."siglaUf"      as uf,
+            SUM(d.valorliquido) as total_gasto,
+            COUNT(d.coddocumento) as qtd_despesas,
+            dep."urlFoto"      as foto
+        FROM fato_despesas d
+        JOIN dim_deputados dep ON dep.id::text = d.deputado_id::text
+        WHERE d.valorliquido > 0
+        {where_dep}
+        GROUP BY dep.id, dep.nome, dep."siglaPartido", dep."siglaUf", dep."urlFoto"
+        ORDER BY total_gasto DESC
+        LIMIT {top_n}
+    """)
+
+    if not df_dep.empty:
+        # KPIs rápidos
+        col_k1, col_k2, col_k3 = st.columns(3)
+        col_k1.metric("💰 Maior gasto individual", fmt_brl(df_dep["total_gasto"].max()))
+        col_k2.metric("📊 Média dos top deputados", fmt_brl(df_dep["total_gasto"].mean()))
+        col_k3.metric("🧾 Total de despesas listadas", f"{int(df_dep['qtd_despesas'].sum()):,}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Gráfico barras horizontal
+        fig_dep = go.Figure(go.Bar(
+            x=df_dep["total_gasto"],
+            y=df_dep["nome"].str.split().str[-1] + " (" + df_dep["partido"] + "/" + df_dep["uf"] + ")",
+            orientation="h",
+            marker=dict(
+                color=df_dep["total_gasto"],
+                colorscale=[[0, "#85B7EB"], [1, "#185FA5"]],
+                showscale=False,
+            ),
+            text=[fmt_brl(v) for v in df_dep["total_gasto"]],
+            textposition="outside",
+            textfont=dict(size=11, family="DM Sans"),
+            hovertemplate="<b>%{y}</b><br>%{text}<extra></extra>",
+        ))
+        layout_dep = {**PLOTLY_TEMPLATE}
+        layout_dep["yaxis"] = dict(autorange="reversed", tickfont=dict(size=11), showgrid=False, zeroline=False)
+        layout_dep["xaxis"] = dict(showticklabels=False, showgrid=False, zeroline=False,
+                                    range=[0, df_dep["total_gasto"].max() * 1.28])
+        layout_dep["height"] = max(420, top_n * 38)
+        layout_dep["margin"] = dict(l=10, r=130, t=20, b=10)
+        fig_dep.update_layout(**layout_dep)
+        st.plotly_chart(fig_dep, use_container_width=True)
+
+        # Tabela detalhada
+        st.markdown("---")
+        st.markdown("##### Detalhamento")
+        df_dep_show = df_dep.copy()
+        df_dep_show["Total Gasto"] = df_dep_show["total_gasto"].map(fmt_brl)
+        df_dep_show["Nº Despesas"] = df_dep_show["qtd_despesas"].astype(int)
+        df_dep_show = df_dep_show[["nome","partido","uf","Total Gasto","Nº Despesas"]].rename(columns={
+            "nome": "Deputado", "partido": "Partido", "uf": "UF"
+        })
+        df_dep_show.index = range(1, len(df_dep_show)+1)
+        st.dataframe(df_dep_show, use_container_width=True,
+            column_config={
+                "Deputado":   st.column_config.TextColumn("Deputado",   width="large"),
+                "Partido":    st.column_config.TextColumn("Partido",    width="small"),
+                "UF":         st.column_config.TextColumn("UF",         width="small"),
+                "Total Gasto":st.column_config.TextColumn("Total Gasto",width="medium"),
+                "Nº Despesas":st.column_config.NumberColumn("Nº Despesas",width="small"),
+            })
+    else:
+        st.info("Dados de despesas por deputado indisponíveis.")
+
+# ── TAB 4 — DADOS RECENTES ───────────────────────────────────────────────────
+with tab4:
 
     # ── PROPOSIÇÕES COM TEMA CLASSIFICADO ────────────────────────────────────
     st.subheader("Proposições Classificadas por Tema")
@@ -655,8 +755,8 @@ with tab3:
     else:
         st.info("Nenhuma votação encontrada.")
 
-# ── TAB 4 — ASSISTENTE ───────────────────────────────────────────────────────
-with tab4:
+# ── TAB 5 — ASSISTENTE ───────────────────────────────────────────────────────
+with tab5:
     st.subheader("💬 Assistente Legislativo")
     st.caption("Faça perguntas sobre as proposições, despesas e votações. O assistente tem acesso ao contexto atual do painel.")
 
