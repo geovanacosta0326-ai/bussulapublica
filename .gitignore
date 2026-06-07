@@ -29,3 +29,5 @@ data/raw/despesas/
 copiar_banco.py
 etl_ollama.py
 testar_banco.py
+teste_db.py
+

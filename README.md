@@ -161,6 +161,9 @@ radar-legislativo/
 ├── extract_despesa.py          # Extração: despesas por deputado (mês anterior)
 ├── transform_load.py           # Carga: dimensões + fatos principais
 ├── transform_load_despesa.py   # Carga: fato_despesas
+├── gerar_embeddings.py         # Geração de embeddings vetoriais via Ollama (nomic-embed-text)
+├── classificar_temas.py        # Classificação temática via similaridade de cosseno (pgvector)
+├── app.py                      # Painel de inteligência legislativa (Streamlit)
 │
 ├── workflows/
 │   ├── Carga_ClassificaTema.json   # n8n: carga incremental + classificação IA
@@ -229,6 +232,60 @@ python transform_load_despesa.py
 3. Configure as credenciais de Supabase e Anthropic dentro do n8n
 4. Ative os workflows
 
+### 6. (Alternativo) Classificar temas via embeddings + cosseno
+
+Este fluxo é uma alternativa local à classificação pelo n8n, sem custo de API.
+Utiliza o modelo `nomic-embed-text` rodando localmente via **Ollama** e similaridade
+de cosseno via **pgvector** para classificar proposições sem tema.
+
+#### Pré-requisitos
+
+- [Ollama](https://ollama.com) instalado e rodando localmente
+- Modelo `nomic-embed-text` disponível:
+
+```bash
+ollama pull nomic-embed-text
+```
+
+- Coluna `embedding` do tipo `vector` na tabela `fato_proposicoes` (pgvector):
+
+```sql
+ALTER TABLE fato_proposicoes ADD COLUMN embedding vector(768);
+```
+
+#### Execução
+
+```bash
+# Passo 1 — Gera os embeddings e salva na coluna `embedding` do banco
+python gerar_embeddings.py
+
+# Passo 2 — Usa os embeddings para classificar proposições sem tema por cosseno
+python classificar_temas.py
+```
+
+> ⚠️ O `classificar_temas.py` depende dos embeddings já gravados.
+> Sempre rode `gerar_embeddings.py` antes.
+
+#### Como funciona
+
+1. Para cada proposição **sem tema**, gera o embedding da ementa via Ollama.
+2. Busca as **K proposições com tema** mais próximas semanticamente usando
+   distância de cosseno (`<=>` do pgvector).
+3. O tema mais frequente entre os vizinhos (ponderado pela similaridade) é atribuído.
+4. Proposições com similaridade abaixo do limiar de confiança são **ignoradas**,
+   evitando classificações ruins.
+
+#### Parâmetros ajustáveis em `classificar_temas.py`
+
+| Parâmetro | Padrão | Descrição |
+|---|---|---|
+| `K_VIZINHOS` | `3` | Número de vizinhos usados na votação |
+| `LIMIAR_SIMILARIDADE` | `0.75` | Similaridade mínima para aceitar o tema (0 a 1) |
+| `MODO_SIMULACAO` | `False` | Se `True`, exibe os resultados sem salvar no banco |
+
+> 💡 **Dica:** rode primeiro com `MODO_SIMULACAO = True` para validar os resultados
+> antes de gravar no banco.
+
 ---
 
 ## 🤖 Camada de IA — Classificação Temática
@@ -278,6 +335,9 @@ Ementa: {ementa}
 | Paginação incremental | Filtra por `dataApresentacao` / `data` | Só busca novos registros, economizando chamadas à API |
 | Ementa ausente | Substitui por `"Sem ementa"` e pula IA | Evita custo desnecessário de API em registros sem conteúdo |
 | Ano ausente/zero | Extrai de `dataApresentacao` | Campo `ano` vinha como `0` da API em alguns casos |
+| Embeddings locais | Ollama + nomic-embed-text | Classificação offline sem custo de API, usando vetores semânticos |
+| Similaridade | Cosseno via pgvector (`<=>`) | Operador nativo do PostgreSQL, sem dependência de bibliotecas externas |
+| Painel | Streamlit (`app.py`) | Visualização interativa dos KPIs, proposições, despesas e votações |
 
 ---
 
@@ -289,6 +349,95 @@ pandas
 sqlalchemy
 psycopg2-binary
 python-dotenv
+streamlit
+plotly
+```
+
+---
+
+## ⏱️ Agendamento do Pipeline
+
+O pipeline é dividido em dois agendamentos independentes, equilibrando
+atualização dos dados com custo computacional:
+
+### Execução semanal — todo domingo às 02h00
+
+Roda a cadeia principal: extração → carga → embeddings → classificação temática.
+
+```
+extract.py
+transform_load.py
+gerar_embeddings.py
+classificar_temas.py
+```
+
+### Execução mensal — todo dia 1º às 03h00
+
+Roda apenas o módulo de despesas, pois a API da Câmara só disponibiliza
+os valores do mês anterior após o fechamento.
+
+```
+extract_despesa.py
+transform_load_despesa.py
+```
+
+### Envio de e-mail — toda segunda-feira às 08h00 (n8n)
+
+O workflow `EnvioEmail.json` no n8n dispara após a execução semanal,
+enviando o resumo legislativo da semana para os clientes.
+
+---
+
+### Como agendar no Windows (Agendador de Tarefas)
+
+Crie dois arquivos `.bat` na raiz do projeto:
+
+**`pipeline_semanal.bat`**
+```bat
+@echo off
+cd /d C:\caminho\do\projeto
+call .venv\Scriptsctivate
+python extract.py
+python transform_load.py
+python gerar_embeddings.py
+python classificar_temas.py
+echo Pipeline semanal finalizado em %date% %time% >> logs\pipeline.log
+```
+
+**`pipeline_mensal.bat`**
+```bat
+@echo off
+cd /d C:\caminho\do\projeto
+call .venv\Scriptsctivate
+python extract_despesa.py
+python transform_load_despesa.py
+echo Pipeline mensal finalizado em %date% %time% >> logs\pipeline.log
+```
+
+Para agendar:
+1. Abra o **Agendador de Tarefas** do Windows (`taskschd.msc`)
+2. Clique em **Criar Tarefa Básica**
+3. Configure o gatilho: `pipeline_semanal.bat` → semanal, domingo, 02h00
+4. Configure o gatilho: `pipeline_mensal.bat` → mensal, dia 1, 03h00
+5. Em **Ação**, aponte para o arquivo `.bat` correspondente
+
+> 💡 Crie a pasta `logs/` na raiz do projeto para registrar as execuções.
+> Adicione `logs/` ao `.gitignore` para não subir os logs ao GitHub.
+
+---
+
+### Como agendar no Linux/Mac (cron)
+
+```bash
+crontab -e
+```
+
+```cron
+# Pipeline semanal — todo domingo às 02h00
+0 2 * * 0 cd /caminho/do/projeto && source .venv/bin/activate && python extract.py && python transform_load.py && python gerar_embeddings.py && python classificar_temas.py >> logs/pipeline.log 2>&1
+
+# Pipeline mensal — todo dia 1º às 03h00
+0 3 1 * * cd /caminho/do/projeto && source .venv/bin/activate && python extract_despesa.py && python transform_load_despesa.py >> logs/pipeline.log 2>&1
 ```
 
 ---
@@ -299,3 +448,6 @@ python-dotenv
 - [Supabase](https://supabase.com)
 - [n8n](https://n8n.io)
 - [Anthropic API](https://docs.anthropic.com)
+- [Ollama](https://ollama.com)
+- [pgvector](https://github.com/pgvector/pgvector)
+- [Streamlit](https://streamlit.io)
