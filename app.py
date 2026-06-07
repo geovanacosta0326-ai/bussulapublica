@@ -63,31 +63,26 @@ html, body, [class*="css"] {
 }
 [data-testid="stMetricDelta"] { font-size: 0.72rem !important; }
 
-/* Abas pill */
+/* Abas */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    background: #EEF3FA;
-    border-radius: 30px;
-    padding: 4px;
-    border: none !important;
-    width: fit-content;
+    border-bottom: 2px solid #E2EAF5;
 }
 .stTabs [data-baseweb="tab"] {
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: 0.78rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: #7BA3C8;
-    padding: 7px 18px;
-    border-radius: 24px;
-    border: none !important;
-    background: transparent !important;
+    color: #4A6FA5;
+    padding: 10px 20px;
 }
 .stTabs [aria-selected="true"] {
-    color: #ffffff !important;
-    background: #185FA5 !important;
-    box-shadow: 0 3px 10px rgba(24,95,165,0.3) !important;
-    border: none !important;
+    color: #0D1B2A !important;
+    font-weight: 700 !important;
+}
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: #185FA5 !important;
+    height: 3px !important;
+    border-radius: 3px !important;
 }
 
 /* Cabeçalho */
