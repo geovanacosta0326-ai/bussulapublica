@@ -4,7 +4,7 @@
 > Pipeline ETL automatizado sobre dados abertos da Câmara dos Deputados, com classificação temática via IA e alertas automáticos por e-mail.
 
 🌐 **Painel publicado:** [bussulapublica-123.streamlit.app](https://bussulapublica-123.streamlit.app/)  
-📊 **Apresentação:** [Ver no Google Slides](https://docs.google.com/presentation/d/1d4yonoAnGNUUPbK_S9Crc1aE4WkK7DBPFLThoaoTv6I/edit?usp=sharing)
+📊 **Apresentação:** [Ver no Google Slides](https://docs.google.com/presentation/d/1d4yonoAnGNUUPbK_S9Crc1aE4WkK7DBPFLThoaoTv6I/present)
 
 ---
 
@@ -455,4 +455,4 @@ crontab -e
 - [pgvector](https://github.com/pgvector/pgvector)
 - [Streamlit](https://streamlit.io)
 - [🌐 Painel ao vivo](https://bussulapublica-123.streamlit.app/)
-- [📊 Apresentação Google Slides](https://docs.google.com/presentation/d/1d4yonoAnGNUUPbK_S9Crc1aE4WkK7DBPFLThoaoTv6I/edit?usp=sharing)
+- [📊 Apresentação Google Slides](https://docs.google.com/presentation/d/1d4yonoAnGNUUPbK_S9Crc1aE4WkK7DBPFLThoaoTv6I/present)
