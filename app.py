@@ -17,19 +17,13 @@ st.set_page_config(
 # ── CSS Customizado ─────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-[data-testid="manage-app-button"],
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-.stDeployButton,
-#MainMenu,
-footer,
-header {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
+[data-testid="manage-app-button"] { display: none !important; }
+[data-testid="stToolbar"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
+[data-testid="stStatusWidget"] { display: none !important; }
+.stDeployButton { display: none !important; }
+#MainMenu { visibility: hidden !important; }
+footer { visibility: hidden !important; }
 </style>
 """, unsafe_allow_html=True)
 
