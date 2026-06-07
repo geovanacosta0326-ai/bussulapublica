@@ -3,6 +3,8 @@
 > Projeto Integrador — Pós Tech Engenharia de Dados  
 > Pipeline ETL automatizado sobre dados abertos da Câmara dos Deputados, com classificação temática via IA e alertas automáticos por e-mail.
 
+🌐 **Painel publicado:** [bussulapublica-123.streamlit.app](https://bussulapublica-123.streamlit.app/)
+
 ---
 
 ## 📌 O Problema
@@ -451,3 +453,4 @@ crontab -e
 - [Ollama](https://ollama.com)
 - [pgvector](https://github.com/pgvector/pgvector)
 - [Streamlit](https://streamlit.io)
+- [🌐 Painel ao vivo](https://bussulapublica-123.streamlit.app/)
