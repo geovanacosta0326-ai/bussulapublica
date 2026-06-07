@@ -29,123 +29,111 @@ footer { visibility: hidden !important; }
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@300;400;500&display=swap');
-
 html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif !important;
 }
 
 .block-container {
-    padding-top: 1.5rem !important;
+    padding-top: 1rem !important;
     padding-bottom: 2rem !important;
     max-width: 1280px;
 }
 
-h1 {
-    font-family: 'Playfair Display', serif !important;
-    font-size: 2rem !important;
-    font-weight: 600 !important;
-    letter-spacing: -0.5px !important;
-    color: #1a1a2e !important;
-}
-
-.subtitle {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #888;
-    margin-top: -8px;
-    margin-bottom: 1.5rem;
-}
-
-.status-badge {
-    display: inline-block;
-    background: #185FA5;
-    color: #B5D4F4;
-    font-size: 0.7rem;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-weight: 500;
-}
-
+/* KPI cards */
 [data-testid="metric-container"] {
     background: #ffffff;
-    border: 0.5px solid #e8e8e8;
-    border-radius: 12px;
-    padding: 1rem 1.25rem !important;
-    box-shadow: none !important;
+    border: none;
+    border-left: 4px solid #185FA5;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem !important;
+    box-shadow: 0 4px 16px rgba(24,95,165,0.10) !important;
 }
-
 [data-testid="stMetricValue"] > div {
-    font-family: 'Playfair Display', serif !important;
-    font-size: 1.75rem !important;
-    font-weight: 600 !important;
-    color: #1a1a2e !important;
+    font-size: 2.1rem !important;
+    font-weight: 700 !important;
+    color: #0D1B2A !important;
+    letter-spacing: -1px !important;
 }
-
 [data-testid="stMetricLabel"] > div {
     font-size: 0.65rem !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.8px !important;
-    color: #888 !important;
-    font-weight: 400 !important;
+    letter-spacing: 1.5px !important;
+    color: #7BA3C8 !important;
+    font-weight: 600 !important;
 }
+[data-testid="stMetricDelta"] { font-size: 0.72rem !important; }
 
-hr {
-    border: none;
-    border-top: 0.5px solid #e8e8e8 !important;
-    margin: 1rem 0 !important;
-}
-
+/* Abas pill */
 .stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    border-bottom: 0.5px solid #e8e8e8;
+    gap: 4px;
+    background: #EEF3FA;
+    border-radius: 30px;
+    padding: 4px;
+    border: none !important;
+    width: fit-content;
 }
-
 .stTabs [data-baseweb="tab"] {
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 0.72rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #888;
-    padding: 8px 16px;
-    border-radius: 6px 6px 0 0;
-}
-
-.stTabs [aria-selected="true"] {
-    color: #185FA5 !important;
-    border-bottom: 2px solid #185FA5 !important;
+    letter-spacing: 0.8px;
+    color: #7BA3C8;
+    padding: 7px 18px;
+    border-radius: 24px;
+    border: none !important;
     background: transparent !important;
 }
-
-h3 {
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.85rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.8px !important;
-    color: #888 !important;
-    font-weight: 500 !important;
-    margin-bottom: 0.75rem !important;
+.stTabs [aria-selected="true"] {
+    color: #ffffff !important;
+    background: #185FA5 !important;
+    box-shadow: 0 3px 10px rgba(24,95,165,0.3) !important;
+    border: none !important;
 }
+
+/* Cabeçalho */
+.rl-header {
+    background: linear-gradient(135deg, #0D1B2A 0%, #185FA5 100%);
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+}
+.rl-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+.rl-subtitle {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #7BA3C8;
+    margin-top: 4px;
+}
+.rl-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    color: #B5D4F4;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 0.68rem;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+hr { border: none; border-top: 1px solid #E8EEF5 !important; margin: 1.5rem 0 !important; }
 
 [data-testid="stDataFrame"] {
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    border: 0.5px solid #e8e8e8 !important;
+    border: 1px solid #E2EAF5 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-section[data-testid="stSidebar"] {
-    display: none;
-}
-
-/* Badge de tema inline */
-.tema-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-    font-weight: 600;
-}
+section[data-testid="stSidebar"] { display: none; }
+.tema-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -232,14 +220,22 @@ def badge_votacao(aprovacao) -> str:
 
 
 # ── Cabeçalho ───────────────────────────────────────────────────────────────
-col_title, col_badge = st.columns([5, 1])
-with col_title:
-    st.title("🏛 Radar Legislativo")
-    st.markdown('<p class="subtitle">Painel de Inteligência — Câmara dos Deputados</p>', unsafe_allow_html=True)
-with col_badge:
-    st.markdown('<br><span class="status-badge">● Atualizado agora</span>', unsafe_allow_html=True)
+st.markdown("""
+<div class="rl-header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="rl-title">🏛 Radar Legislativo</div>
+      <div class="rl-subtitle">Painel de Inteligência · Câmara dos Deputados</div>
+    </div>
+    <div style="text-align:right;padding-top:4px">
+      <span class="rl-badge">● Atualizado agora</span>
+      <div style="font-size:0.68rem;color:#4a7a9b;margin-top:6px;letter-spacing:0.5px">bussulapublica-123.streamlit.app</div>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-st.divider()
+st.markdown('<div style="padding: 0 2rem">', unsafe_allow_html=True)
 
 # ── KPIs ─────────────────────────────────────────────────────────────────────
 df_prop     = get_data("SELECT count(*) as total FROM fato_proposicoes")
@@ -277,42 +273,60 @@ with tab1:
     """)
 
     if not df_temas.empty:
-        col_chart, col_top = st.columns([3, 2])
+        total_t = df_temas["qtd"].sum()
+        cores_lista = [CORES_TEMA.get(t, CORES["cinza"]) for t in df_temas["tema"]]
+
+        col_chart, col_top = st.columns([2, 3])
 
         with col_chart:
             fig = go.Figure(go.Pie(
                 labels=df_temas["tema"],
                 values=df_temas["qtd"],
-                hole=0.5,
-                textinfo="percent",
-                textfont=dict(size=12, family="DM Sans"),
-                marker=dict(
-                    colors=[CORES["azul_escuro"], CORES["teal"], CORES["amber"],
-                            CORES["vermelho"], CORES["azul_medio"], CORES["cinza"]],
-                    line=dict(color="#ffffff", width=2),
-                ),
-                hovertemplate="<b>%{label}</b><br>%{value} proposições<br>%{percent}<extra></extra>",
+                hole=0.62,
+                textinfo="none",
+                marker=dict(colors=cores_lista, line=dict(color="#ffffff", width=3)),
+                hovertemplate="<b>%{label}</b><br>%{value:,} proposições<br><b>%{percent}</b><extra></extra>",
+                sort=False,
             ))
-            fig.update_layout(**PLOTLY_TEMPLATE, showlegend=False, height=340)
+            # Texto central
+            fig.add_annotation(
+                text=f"<b>{total_t:,}</b><br><span style='font-size:11px'>proposições</span>",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=18, color="#0D1B2A"),
+                xanchor="center", yanchor="middle",
+            )
+            layout_donut = {**PLOTLY_TEMPLATE}
+            layout_donut["showlegend"] = False
+            layout_donut["height"] = 340
+            layout_donut["margin"] = dict(l=20, r=20, t=20, b=20)
+            fig.update_layout(**layout_donut)
             st.plotly_chart(fig, use_container_width=True)
 
         with col_top:
+            st.markdown("<div style='padding-top:1rem'>", unsafe_allow_html=True)
             st.markdown("**Ranking por volume**")
-            total_t = df_temas["qtd"].sum()
-            for _, row in df_temas.head(8).iterrows():
+            for _, row in df_temas.iterrows():
                 pct = row["qtd"] / total_t
                 cor = CORES_TEMA.get(row["tema"], CORES["cinza"])
                 st.markdown(f"""
-                <div style="margin-bottom:10px">
-                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
-                    <span style="color:#444">{row['tema']}</span>
-                    <span style="color:#888">{row['qtd']:,} &nbsp;·&nbsp; {pct:.0%}</span>
+                <div style="margin-bottom:12px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div style="width:10px;height:10px;border-radius:50%;background:{cor};flex-shrink:0"></div>
+                      <span style="color:#0D1B2A;font-size:13px;font-weight:500">{row['tema']}</span>
+                    </div>
+                    <div style="display:flex;gap:12px;align-items:center">
+                      <span style="color:#185FA5;font-size:12px;font-weight:700">{pct:.0%}</span>
+                      <span style="color:#aaa;font-size:11px">{row['qtd']:,}</span>
+                    </div>
                   </div>
-                  <div style="background:#f0f0f0;border-radius:4px;height:5px">
-                    <div style="background:{cor};width:{pct*100:.1f}%;height:5px;border-radius:4px"></div>
+                  <div style="background:#EEF3FA;border-radius:6px;height:7px">
+                    <div style="background:{cor};width:{pct*100:.1f}%;height:7px;border-radius:6px;
+                         box-shadow:0 1px 3px {cor}66"></div>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
     else:
         st.info("Dados de temas ainda não classificados.")
 
@@ -388,9 +402,33 @@ with tab1:
 with tab2:
     st.subheader("Maiores Gastos por Categoria")
 
-    df_desp_cat = get_data("""
+    # Filtros de ano e mês
+    df_anos = get_data("SELECT DISTINCT ano FROM fato_despesas WHERE ano IS NOT NULL ORDER BY ano DESC")
+    df_meses = get_data("SELECT DISTINCT mes FROM fato_despesas WHERE mes IS NOT NULL ORDER BY mes")
+
+    anos_disp = ["Todos"] + [str(int(a)) for a in df_anos["ano"].tolist()] if not df_anos.empty else ["Todos"]
+    meses_map = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",
+                 7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"}
+    meses_disp = ["Todos"] + [meses_map.get(int(m), str(int(m))) for m in df_meses["mes"].tolist()] if not df_meses.empty else ["Todos"]
+    meses_num  = {v: k for k, v in meses_map.items()}
+
+    fc1, fc2, fc3 = st.columns([1, 1, 3])
+    with fc1:
+        filtro_ano = st.selectbox("📅 Ano", anos_disp, key="desp_ano")
+    with fc2:
+        filtro_mes = st.selectbox("🗓 Mês", meses_disp, key="desp_mes")
+
+    where_clauses = []
+    if filtro_ano != "Todos":
+        where_clauses.append(f"ano = {filtro_ano}")
+    if filtro_mes != "Todos":
+        where_clauses.append(f"mes = {meses_num.get(filtro_mes, 0)}")
+    where_sql = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+    df_desp_cat = get_data(f"""
         SELECT tipodespesa, SUM(valorliquido) as valor
         FROM fato_despesas
+        {where_sql}
         GROUP BY tipodespesa
         ORDER BY valor DESC
         LIMIT 10
@@ -895,3 +933,4 @@ st.markdown(
     "Atualização em tempo real via SQLAlchemy</p>",
     unsafe_allow_html=True,
 )
+st.markdown('</div>', unsafe_allow_html=True)
