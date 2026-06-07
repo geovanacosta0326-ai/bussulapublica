@@ -63,21 +63,41 @@ html, body, [class*="css"] {
 }
 [data-testid="stMetricDelta"] { font-size: 0.72rem !important; }
 
-/* Abas */
+/* Abas — força cor escura com especificidade máxima */
 .stTabs [data-baseweb="tab-list"] {
     border-bottom: 2px solid #E2EAF5;
+    gap: 0 !important;
 }
+.stTabs [data-baseweb="tab"] p,
+.stTabs [data-baseweb="tab"] span,
+.stTabs [data-baseweb="tab"] div,
 .stTabs [data-baseweb="tab"] {
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #4A6FA5;
-    padding: 10px 20px;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    color: #2C4A6E !important;
+    padding: 10px 20px !important;
 }
+.stTabs [aria-selected="true"] p,
+.stTabs [aria-selected="true"] span,
+.stTabs [aria-selected="true"] div,
 .stTabs [aria-selected="true"] {
     color: #0D1B2A !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
+}
+/* Forçar todas as abas visíveis sem scroll */
+.stTabs [data-baseweb="tab-list"] {
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+}
+.stTabs [data-baseweb="tab"] p,
+.stTabs [data-baseweb="tab"] span,
+.stTabs [data-baseweb="tab"] div,
+.stTabs [data-baseweb="tab"] {
+    padding: 8px 10px !important;
+    font-size: 0.68rem !important;
+    white-space: nowrap !important;
 }
 .stTabs [data-baseweb="tab-highlight"] {
     background-color: #185FA5 !important;
@@ -253,7 +273,7 @@ k4.metric("🏷 Sem Tema",             f"{total_sem_tema:,}", delta=f"{pct_sem_t
 st.divider()
 
 # ── Abas principais ──────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Proposições por Tema", "💸 Despesas por Categoria", "🏅 Deputados", "📋 Dados Recentes", "💬 Assistente"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Proposições", "💸 Despesas", "🏅 Deputados", "📋 Dados Recentes", "💬 Assistente"])
 
 # ── TAB 1 ────────────────────────────────────────────────────────────────────
 with tab1:
